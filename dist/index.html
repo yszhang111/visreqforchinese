@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>行境 · 中国护照签证地图</title>
+  <meta name="description" content="查询中国普通护照的旅游签证要求，结合已有签证和居留证件查看有条件免签政策及官方来源。">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230c292d'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%2380ded2' stroke-width='1.5'/%3E%3Cellipse cx='16' cy='16' rx='5' ry='10' fill='none' stroke='%2380ded2' stroke-width='1.5'/%3E%3Cpath d='M6 16h20' stroke='%2380ded2' stroke-width='1.5'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="map-shell.css">
+  <script defer src="assets/d3.min.js"></script>
+  <script defer src="assets/topojson.min.js"></script>
+  <script defer src="policies.js"></script>
+  <script defer src="policy-expansion.js"></script>
+  <script defer src="engine.js"></script>
+  <script defer src="main.js"></script>
+</head>
+<body>
+  <main class="workspace" id="workspace">
+    <button id="profile-toggle" class="floating-toggle profile-toggle" aria-controls="profile-panel" aria-expanded="false" aria-label="展开已有签证与永居，解锁更多免签"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v14H4zM8 6V3h8v3M4 11h16M9 10v3m6-3v3"/></svg><span class="profile-toggle-copy"><span class="profile-toggle-title"><span class="profile-title-long">用已有签证解锁免签</span><span class="profile-title-short">解锁更多免签</span></span><small id="profile-summary-label">看看还能去哪</small></span></button>
+    <button id="detail-toggle" class="floating-toggle detail-toggle" aria-controls="detail-panel" aria-expanded="false" aria-label="展开国家详情"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span id="selected-country-label">国家详情</span></button>
+    <aside class="profile-panel floating-panel" id="profile-panel" aria-label="已有签证与永居" hidden>
+      <div class="floating-panel-heading"><h1>解锁更多免签</h1><button id="profile-close" class="panel-close" aria-label="收起已有签证与永居">×</button></div>
+      <p class="secondary">中国普通护照 · 勾选你持有的证件</p>
+      <div class="credential-discovery" id="credential-discovery">
+        <div class="discovery-result" aria-live="polite" aria-atomic="true"><strong id="discovery-title">一张签证，不止一个目的地</strong><p id="discovery-description">已有美国、申根等签证或永居？勾选下方选项，看看还能免签去哪。</p></div>
+        <p class="discovery-map-hint"><i class="swatch conditional"></i>地图上的紫色 = 有条件免签</p>
+        <button id="show-unlocked" class="discovery-action" hidden>查看这些国家 <span aria-hidden="true">→</span></button>
+      </div>
+      <section class="credential-section" aria-labelledby="visa-heading">
+        <div class="section-title"><h2 id="visa-heading">旅游签证</h2><span>可多选</span></div>
+        <div id="visa-options" class="credential-options" role="group" aria-label="旅游签证"></div>
+      </section>
+      <section class="credential-section" aria-labelledby="permanent-heading">
+        <div class="section-title"><h2 id="permanent-heading">永久居留</h2><span>可多选</span></div>
+        <div id="permanent-options" class="credential-options" role="group" aria-label="永久居留"></div>
+      </section>
+      <div class="credential-footer"><span id="credential-count">未选择证件</span><button id="clear-credentials" disabled>清空选择</button></div>
+      <p class="credential-hint">旅游签证默认按旅游用途查询。免签的有效期、使用记录等条件见国家详情。</p>
+    </aside>
+    <section class="map-panel" aria-label="世界签证地图">
+      <div class="map-toolbar" id="map-toolbar">
+      <div class="search-row"><label class="search-box"><span aria-hidden="true">⌕</span><input id="country-search" type="search" placeholder="搜索国家或地区，中英文均可" aria-label="搜索国家或地区"><kbd>/</kbd></label><button id="filters-toggle" class="filters-toggle" aria-controls="filter-panel" aria-expanded="false" aria-label="展开筛选"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M7 12h10m-6 5h2"/></svg><span id="filter-label">筛选</span></button><div class="view-toggle" role="group" aria-label="查询视图"><button id="map-view" aria-pressed="true">地图</button><button id="list-view" aria-pressed="false">列表</button></div></div>
+      <div id="search-results" class="search-results" hidden></div>
+      <div id="filter-panel" class="filter-panel" hidden><div class="filter-heading"><h2>筛选目的地</h2><select id="region-filter" aria-label="按地区筛选"><option value="all">全部地区</option><option value="Asia">亚洲</option><option value="Europe">欧洲</option><option value="Africa">非洲</option><option value="Americas">美洲</option><option value="Oceania">大洋洲</option></select></div>
+      <div class="filter-row" id="status-filters" role="group" aria-label="按签证方式筛选"><button data-filter="all" aria-pressed="true">全部</button><button data-filter="free"><i class="swatch free"></i>免签</button><button data-filter="held"><i class="swatch held"></i>已有证件</button><button data-filter="unlocked" id="unlocked-filter" hidden><i class="swatch conditional"></i>新增免签</button><button data-filter="conditional" title="凭第三国签证或居留的免签及其他便利途径"><i class="swatch conditional"></i>第三国证件</button><button data-filter="arrival"><i class="swatch arrival"></i>落地签</button><button data-filter="electronic"><i class="swatch electronic"></i>电子签</button><button data-filter="required"><i class="swatch required"></i>需办签证</button></div>
+      </div>
+      <div class="map-caption"><span id="result-caption" aria-live="polite">正在载入世界地图…</span><span class="snapshot-tag">政策快照 · 2026.10.01</span></div>
+      </div>
+      <div class="map-surface" id="map-surface"><svg id="world-map" role="img" aria-label="按签证政策着色的世界地图"></svg><div class="map-tooltip" id="map-tooltip" role="tooltip" hidden></div><div class="map-controls"><button id="zoom-in" aria-label="放大地图">＋</button><button id="zoom-out" aria-label="缩小地图">−</button><button id="zoom-reset" aria-label="还原地图">⌾</button></div><div class="map-watermark">行境 / VISA ATLAS</div></div>
+      <section id="list-panel" class="list-panel" aria-label="目的地列表" hidden><div class="floating-panel-heading"><h2 id="list-title">目的地列表</h2><button id="list-close" class="panel-close" aria-label="关闭目的地列表">×</button></div><div id="country-grid" class="country-grid" hidden></div></section>
+      <div class="map-legend" id="map-legend" aria-label="地图图例"><span><i class="swatch free"></i>免签</span><span><i class="swatch held"></i>已有证件</span><span><i class="swatch conditional"></i>有条件免签</span><span><i class="swatch arrival"></i>落地签</span><span><i class="swatch electronic"></i>电子签</span><span><i class="swatch required"></i>需办签证</span><span><i class="swatch unknown"></i>待核实</span></div>
+      <div class="map-info"><button id="about-button">数据与来源</button><button id="legend-toggle" aria-controls="map-legend" aria-expanded="true">图例</button></div>
+    </section>
+    <aside class="detail-panel floating-panel" id="detail-panel" aria-label="目的地政策详情" hidden>
+      <div class="floating-panel-heading"><span class="panel-kicker">DESTINATION DETAILS</span><button id="detail-close" class="panel-close" aria-label="收起国家详情">×</button></div>
+      <div id="country-detail"><div class="detail-intro"><span class="destination-code">MX</span><h2>墨西哥</h2><p>Mexico · 美洲</p></div><div class="status-banner required">需提前办理签证</div><div class="detail-block"><h3>已有证件可能改变入境方式</h3><p>点击“解锁更多免签”，勾选已有旅游签证或永居，查看相关免签途径。</p></div><div class="detail-block"><h3>查看官方依据</h3><a href="https://embamex.sre.gob.mx/china/index.php/zh/visas2" target="_blank" rel="noopener noreferrer">墨西哥驻华使馆 · 签证政策 ↗</a><p class="secondary">资料核实：2026-09-30</p></div></div>
+    </aside>
+  </main>
+  <dialog id="sources-dialog" aria-labelledby="sources-title"><div class="dialog-top"><div><div class="panel-kicker">ABOUT THE DATA</div><h2 id="sources-title">数据与来源</h2></div><button class="close-dialog" aria-label="关闭">×</button></div><div id="sources-content"></div></dialog>
+  <div class="toast" id="toast" role="status" hidden></div>
+</body>
+</html>

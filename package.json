@@ -1,0 +1,11 @@
+{
+  "name": "visa-atlas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "中国普通护照签证地图的本地预览",
+  "scripts": {
+    "start": "python scripts/serve-local.py",
+    "dev": "python scripts/serve-local.py",
+    "test": "node scripts/verify.js"
+  }
+}
