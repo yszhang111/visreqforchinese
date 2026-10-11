@@ -810,7 +810,7 @@
     ['BD','arrival',30,['可在达卡国际机场办理旅游落地签，须提供返程机票、酒店或邀请材料；实际签发通常为 15–30 天。']],
     ['MM','arrival',null,['旅游落地签适用指定国际机场，包括仰光、曼德勒及内比都；也可核对提前申请电子签的途径。']],
     ['NP','arrival',90,['可申请 15 / 30 / 90 天旅游落地签，中国公民享有旅游签证费便利。免收费用仍需办理签证；遵守年度累计停留规定。']],
-    ['LK','electronic',30,['中国公民可申请免费 30 天旅游 ETA，但必须在出行前获批。免费 ETA 仍是电子许可，不按直接免签处理。']],
+    ['LK','arrival',30,['中国普通护照可申请免费的旅游 ETA；须在出行前取得授权。','斯里兰卡 ETA 是旅行授权，持有人在入境口岸取得 30 天短期访问签证。本页按免费落地签显示，免收费用不等于无需签证。']],
     ['TJ','electronic',null,['可核对官方电子签申请途径。55 岁以上中国公民的 14 天免签属于年龄限定政策，本页尚未收集年龄，不自动套用。']],
     ['TM','required',null,['须提前申请签证，通常需要经批准的邀请函。']],
     ['SY','electronic',null,['普通护照签证需按使馆指引提前在线申请。申请窗口、获批有效期和停留期限须分别确认。']],
@@ -847,7 +847,7 @@
     ['CM','electronic',null,['须先在线申请预签证，取得批准 / 二维码后才可出发，在适用口岸完成签发手续。']],
     ['KM','arrival',45,['可申请旅游落地签，需核对返程机票、住宿及生物信息采集要求。']],
     ['CI','electronic',null,['须在出发前通过官方系统完成申请，取得批准后在阿比让机场完成相关手续。']],
-    ['KE','electronic',null,['须提前取得肯尼亚 eTA 电子旅行授权。宣布取消传统签证仍不等于免除 eTA 申请；授权有效期也不等于获准停留期限。']],
+    ['KE','free',null,['免办传统签证，但中国普通护照仍须在出行前取得肯尼亚 eTA 电子旅行授权。','eTA 是旅行授权，须申请并获批后才能出发；授权有效期不等于获准停留期限，入境及停留以边检批准为准。']],
     ['LS','required',null,['应按莱索托官方要求提前取得签证 / 批准；经南非前往还需符合南非入境要求。']],
     ['LR','required',null,['普通护照应提前办妥签证。']],
     ['LY','required',null,['须提前取得适用签证或批准。利比亚正在实施电子签系统，具体国籍资格和申请方式应向主管机关确认。']],
@@ -936,8 +936,9 @@
   policies.DM.source=source('mutual-current','国家移民管理局 · 中外互免签证协定及期限','https://www.nia.gov.cn/n741440/n741577/c1710341/content.html');
   policies.BT.source=source('bhutan-tourism','不丹官方旅游局 · 在线签证','https://bhutan.travel/visa');
   policies.BF.source=source('burkina-evisa','布基纳法索官方 · 短期电子签','https://www.visaburkina.bf/les-visas-dentree-au-burkina-faso-le-visa-de-court-sejour/');
-  policies.LK.source=source('sri-lanka-eta','斯里兰卡移民局 · 2026 年免费 ETA 规则','https://www.immigration.gov.lk/pages_e.php?id=60');
-  policies.LK.electronicName='ETA';policies.KE.electronicName='eTA';
+  policies.LK.source=source('sri-lanka-eta','斯里兰卡移民局 · 免费旅游 ETA 要求','https://eta.gov.lk/slvisa/');
+  Object.assign(policies.LK,{authorization:'ETA',label:'免费落地签 · 需 ETA',verified:'2026-10-11',fee:'中国普通护照的 30 天旅游 ETA 免费；延期另行收费',additionalSources:[source('sri-lanka-eta-entry','斯里兰卡移民局 · ETA 与入境时签发的短期签证','https://www.eta.gov.lk/slvisa/visainfo/weta.jsp?ch1=current&locale=en_US')]});
+  Object.assign(policies.KE,{authorization:'eTA',verified:'2026-10-11',source:source('kenya-eta','肯尼亚移民局 · eTA 适用范围与申请要求','https://etakenya.go.ke/general-information')});
   policies.MW.source=source('malawi-2026','马拉维移民局 · 第一类国籍须提前办签','https://www.evisa.gov.mw/PDFs/CategoryOneCountries.pdf');
   policies.MW.additionalSources=[source('malawi-evisa','马拉维移民局 · 2026 年入境公告及电子签','https://www.evisa.gov.mw/Index')];
   policies.NA.source=source('namibia-ordinary','纳米比亚移民部门 · 签证国籍与护照类别','https://eservices.mhaiss.gov.na/form/FactSheetVisaRequirementstoNamibia.pdf');
@@ -971,7 +972,7 @@
   policies.MK.rules=[rule('mk-residence','凭欧盟 / 申根居留免办北马其顿签证',[...eu,...schengen],['permanent','residence'],15,{window:touristWindow}),rule('mk-schengen-c','凭多次申根 C 类签证免办北马其顿签证',schengen,['visa'],15,{multiple:true,visaCodes:['C'],validity:'stay',afterStayDays:5,window:touristWindow}),rule('mk-2026-visa','2026 年凭美国 / 加拿大 / 英国多次签证免签',['US','CA','GB'],['visa'],15,{multiple:true,validity:'stay',afterStayDays:5,validFrom:'2026-01-01',validUntil:'2026-12-31',window:touristWindow,manualChecks:['签证须为护照内的实体签证，电子签不自动适用']})];
   policies.KG.rules=[rule('kg-long-visa','凭指定第三国长期签证适用 7 天免签',['US','GB',...schengen],['visa'],7,{manualChecks:['该签证原签发有效期须为三年以上','须经玛纳斯国际机场入境','再次入境须满足官方规定的 21 天间隔']})];
   policies.PH.rules=[rule('ph-third-visa','凭指定国家有效签证适用 7 天旅游免签',['US','CA','JP','AU',...schengen],['visa'],7,{source:'guide-PH',manualChecks:['须核对第三国签证便利实际适用的入境口岸及移民审核要求']})];
-  policies.NZ.rules=[rule('nz-from-australia','凭澳大利亚签证从澳赴新，提前申请 NZeTA',['AU'],['visa'],null,{maxMonths:3,status:'electronic',authorization:'NZeTA',validFrom:'2025-11-03',manualChecks:['澳大利亚签证类别须在新西兰官方允许范围内','已合法进入澳大利亚，并从澳大利亚前往新西兰；机场过境不适用','出发前须取得 NZeTA 授权'],source:source('nz-australia-pilot','新西兰移民局 · 中国游客从澳大利亚赴新途径','https://www.immigration.govt.nz/visit/what-you-need-to-visit-new-zealand/chinese-and-pacific-island-visitors-travelling-from-australia/')})];
+  policies.NZ.rules=[rule('nz-from-australia','凭澳大利亚签证从澳赴新免办访客签证，提前取得 NZeTA',['AU'],['visa'],null,{maxMonths:3,status:'conditional',label:'有条件免签 · 需 NZeTA',authorization:'NZeTA',validFrom:'2025-11-03',manualChecks:['澳大利亚签证类别须在新西兰官方允许范围内','已合法进入澳大利亚，并从澳大利亚前往新西兰；机场过境不适用','出发前须取得 NZeTA 授权'],notes:['NZeTA 是电子旅行授权，无需在出发前申请新西兰访客签证。','符合条件并获准入境后，在边境签发访客签证，单次最多停留 3 个月。'],source:source('nz-australia-pilot','新西兰移民局 · 中国游客从澳大利亚赴新途径','https://www.immigration.govt.nz/visit/what-you-need-to-visit-new-zealand/chinese-and-pacific-island-visitors-travelling-from-australia/')})];
   policies.NZ.rules.push(rule('nz-australian-pr','凭澳洲永居免办访客签证，提前取得 NZeTA',['AU'],['permanent'],null,{
     status:'conditional',label:'有条件免签 · 需 NZeTA',authorization:'NZeTA',unlimitedStay:true,stayLabel:'获批居留签证后可无限期停留',
     manualChecks:['持有效的澳大利亚永久居留签证或居民返程签证（Resident Return Visa）','澳大利亚签证的旅行条件仍允许返回澳大利亚，且签证与本次使用的护照关联','出发前须取得 NZeTA 授权；已有有效新西兰签证者按该签证要求出行','完成新西兰旅客入境申报（NZTD），并符合品行及入境要求'],

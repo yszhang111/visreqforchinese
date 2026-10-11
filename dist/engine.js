@@ -6,6 +6,7 @@
   const check=(label,status)=>({label,status});
   const activeAt=(record,trip)=>(!record.validFrom||trip.date>=record.validFrom)&&(!record.validUntil||trip.date<=record.validUntil);
   const limitDays=(record,trip)=>record.maxMonths?Math.round((addMonths(trip.date,record.maxMonths)-dateMs(trip.date))/DAY):record.maxDays;
+  const freeLabel=policy=>policy.label||(policy.authorization?`免签 · 需 ${policy.authorization}`:policy.manualChecks?.length?'免签 · 适用条件见详情':policy.limitUnverified?'免签 · 停留上限待核实':'普通护照免签');
   function effectivePolicy(policy,trip){
     if(!policy)return policy;
     const limit=limitDays(policy,trip);
@@ -42,7 +43,7 @@
   function evaluate(originalPolicy,documents,trip){
     const policy=effectivePolicy(originalPolicy,trip);
     if(!policy)return {status:'unknown',label:'政策待核实',outcome:'pending',maxDays:null,routes:[],selected:null};
-    if(policy.status==='home'||policy.status==='permit')return {status:policy.status,label:policy.status==='home'?'护照签发地':'需核对专用旅行证件',outcome:'pending',maxDays:null,routes:[],selected:null};
+    if(policy.status==='home'||policy.status==='permit')return {status:policy.status,label:policy.label||(policy.status==='home'?'护照签发地':'需核对专用旅行证件'),outcome:'pending',maxDays:null,routes:[],selected:null};
     const routes=(policy.rules||[]).flatMap(rule=>documents.map(doc=>evaluateRule(rule,doc,trip)).filter(Boolean));
     const sort=(a,b)=>Number(!!b.rule.unlimitedStay)-Number(!!a.rule.unlimitedStay)||(limitDays(b.rule,trip)||0)-(limitDays(a.rule,trip)||0);
     const passed=routes.filter(r=>r.outcome==='pass').sort(sort),pending=routes.filter(r=>r.outcome==='pending').sort(sort);
@@ -51,20 +52,20 @@
     const baseFits=baseLimit==null||trip.days<=baseLimit;
     const baseFree=policy.status==='free'&&!baseExpired&&baseFits;
     const baseNeedsCheck=policy.limitUnverified||(policy.manualChecks||[]).length>0;
-    if(baseFree&&!baseNeedsCheck)return {status:'free',label:'普通护照免签',outcome:'pass',maxDays:baseLimit,routes,selected:null};
+    if(baseFree&&!baseNeedsCheck)return {status:'free',label:freeLabel(policy),outcome:'pass',maxDays:baseLimit,routes,selected:null};
     const routeResult=(route,outcome)=>({status:route.rule.status||'conditional',label:route.rule.label|| (route.rule.status==='electronic'?`需提前申请 ${route.rule.authorization||'电子许可'} · ${outcome==='pass'?'已匹配':'条件待核对'}`:`有条件免签 · ${outcome==='pass'?'已匹配':'待补充 / 核对'}`),outcome,maxDays:limitDays(route.rule,trip),routes,selected:route});
     if(passed.length)return routeResult(passed[0],'pass');
-    if(pending.length&&!baseFree)return routeResult(pending[0],'pending');
+    if(pending.length&&(!baseFree||policy.preferCredentialRoute))return routeResult(pending[0],'pending');
     if(baseExpired)return {status:'unknown',label:'该日期政策待核实',outcome:'pending',maxDays:null,routes,selected:null};
     if(!baseFits)return {status:'required',label:'停留超出已录入期限',outcome:'fail',maxDays:baseLimit,routes,selected:null};
-    const labels={free:policy.manualChecks?.length?'免签 · 适用条件待核对':'免签 · 停留期限待核实',arrival:'可办理落地签',electronic:policy.electronicName?`需提前申请 ${policy.electronicName}`:'需提前申请电子签',required:'需提前办理签证',unknown:'政策待核实'};
+    const labels={free:freeLabel(policy),arrival:'可办理落地签',electronic:policy.electronicName?`需提前申请 ${policy.electronicName}`:'需提前申请电子签',required:'需提前办理签证',unknown:'政策待核实'};
     return {status:policy.status,label:policy.label||labels[policy.status]||'政策待核实',outcome:baseNeedsCheck?'pending':'pass',maxDays:baseLimit,routes,selected:null};
   }
   // Simple country/type selection discovers routes; it never fabricates expiry, entries or usage.
   function evaluateProfile(originalPolicy,documents,date,issuerGroups={}){
     const trip={date,days:1},policy=effectivePolicy(originalPolicy,trip);
     if(!policy)return {status:'unknown',label:'政策待核实',outcome:'pending',maxDays:null,routes:[],selected:null};
-    if(['home','permit'].includes(policy.status))return {status:policy.status,label:policy.status==='home'?'护照签发地':'需核对专用旅行证件',outcome:'available',maxDays:null,routes:[],selected:null};
+    if(['home','permit'].includes(policy.status))return {status:policy.status,label:policy.label||(policy.status==='home'?'护照签发地':'需核对专用旅行证件'),outcome:'available',maxDays:null,routes:[],selected:null};
     const routes=(policy.rules||[]).flatMap(rule=>documents.map(doc=>{
       if(!['visa','permanent'].includes(doc.type))return null;
       if(!rule.types.includes(doc.type))return null;
@@ -75,7 +76,7 @@
     }).filter(Boolean));
     const available=routes.filter(route=>route.outcome==='available').sort((a,b)=>Number(!!b.rule.unlimitedStay)-Number(!!a.rule.unlimitedStay)||(limitDays(b.rule,trip)||0)-(limitDays(a.rule,trip)||0));
     const baseActive=activeAt(policy,trip);
-    if(policy.status==='free'&&baseActive)return {status:'free',label:policy.manualChecks?.length?'免签 · 适用条件见详情':policy.limitUnverified?'免签 · 停留上限待核实':'普通护照免签',outcome:policy.limitUnverified||policy.manualChecks?.length?'pending':'available',maxDays:policy.maxDays,routes,selected:null};
+    if(policy.status==='free'&&baseActive&&(!policy.preferCredentialRoute||!available.length))return {status:'free',label:freeLabel(policy),outcome:policy.limitUnverified||policy.manualChecks?.length?'pending':'available',maxDays:policy.maxDays,routes,selected:null};
     const schengen=issuerGroups.SCHENGEN||[];
     const heldDoc=documents.filter(doc=>['visa','permanent'].includes(doc.type)&&doc.validity!=='invalid'&&(doc.issuer===policy.code||schengen.includes(policy.code)&&(doc.issuer==='SCHENGEN'||schengen.includes(doc.issuer)))).sort((a,b)=>Number(b.type==='permanent')-Number(a.type==='permanent'))[0];
     if(heldDoc){

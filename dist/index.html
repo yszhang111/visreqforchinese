@@ -12,6 +12,7 @@
   <script defer src="assets/topojson.min.js"></script>
   <script defer src="policies.js"></script>
   <script defer src="policy-expansion.js"></script>
+  <script defer src="territories.js"></script>
   <script defer src="engine.js"></script>
   <script defer src="main.js"></script>
 </head>
@@ -49,7 +50,7 @@
       </div>
       <div class="map-surface" id="map-surface"><svg id="world-map" role="img" aria-label="按签证政策着色的世界地图"></svg><div class="map-tooltip" id="map-tooltip" role="tooltip" hidden></div><div class="map-controls"><button id="zoom-in" aria-label="放大地图">＋</button><button id="zoom-out" aria-label="缩小地图">−</button><button id="zoom-reset" aria-label="还原地图">⌾</button></div><div class="map-watermark">行境 / VISA ATLAS</div></div>
       <section id="list-panel" class="list-panel" aria-label="目的地列表" hidden><div class="floating-panel-heading"><h2 id="list-title">目的地列表</h2><button id="list-close" class="panel-close" aria-label="关闭目的地列表">×</button></div><div id="country-grid" class="country-grid" hidden></div></section>
-      <div class="map-legend" id="map-legend" aria-label="地图图例"><span><i class="swatch free"></i>免签</span><span><i class="swatch held"></i>已有证件</span><span><i class="swatch conditional"></i>有条件免签</span><span><i class="swatch arrival"></i>落地签</span><span><i class="swatch electronic"></i>电子签</span><span><i class="swatch required"></i>需办签证</span><span><i class="swatch unknown"></i>待核实</span></div>
+      <div class="map-legend" id="map-legend" aria-label="地图图例"><span><i class="swatch free"></i>免签</span><span><i class="swatch held"></i>已有证件</span><span><i class="swatch conditional"></i>有条件免签</span><span><i class="swatch arrival"></i>落地签</span><span><i class="swatch electronic"></i>电子签</span><span><i class="swatch required"></i>需办签证</span><span><i class="swatch unknown"></i>待核实 / 特殊许可</span></div>
       <div class="map-info"><button id="about-button">数据与来源</button><button id="legend-toggle" aria-controls="map-legend" aria-expanded="true">图例</button></div>
     </section>
     <aside class="detail-panel floating-panel" id="detail-panel" aria-label="目的地政策详情" hidden>

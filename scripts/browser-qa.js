@@ -98,7 +98,7 @@ const {chromium}=require('C:/Users/92892/.cache/codex-runtimes/codex-primary-run
   await page.locator('#filters-toggle').click();
   await page.locator('[data-filter="held"]').click();
   await page.getByRole('button',{name:'列表',exact:true}).click();
-  if(await page.locator('#country-grid .destination-card').count()!==29)throw new Error('Held-document filter should include all 29 Schengen states');
+  if(await page.locator('#country-grid .destination-card').count()!==31)throw new Error('Held-document filter should include 29 Schengen states, Aland and Gibraltar');
   await page.locator('#filters-toggle').click();
   await page.locator('[data-filter="all"]').click();
   await page.getByRole('button',{name:'地图',exact:true}).click();
@@ -120,7 +120,12 @@ const {chromium}=require('C:/Users/92892/.cache/codex-runtimes/codex-primary-run
   await choice('visa','AU').click();
   await select('NZ','新西兰');
   if(!await page.locator('#country-detail').innerText().then(t=>t.includes('NZeTA')&&t.includes('澳洲旅游签证')&&t.includes('已合法进入澳大利亚')))throw new Error('Australia selection lost the NZeTA / route requirements');
-  if(await page.locator('.country.selected').getAttribute('fill')!=='#e9c267')throw new Error('NZeTA route should use electronic authorization color');
+  if(await page.locator('.country.selected').getAttribute('fill')!=='#9481cd')throw new Error('NZeTA route should use conditional visa-free color');
+  await page.locator('#show-unlocked').click();
+  if(await page.locator('#country-grid [data-country="NZ"]').count()!==1||!await page.locator('#country-grid [data-country="NZ"]').innerText().then(t=>t.includes('NZeTA')))throw new Error('NZeTA waiver missing from unlocked destinations');
+  await page.locator('#map-view').click();
+  await page.locator('#profile-toggle').click();
+  await select('NZ','新西兰');
   await choice('permanent','AU').click();
   if(!await page.locator('#country-detail .status-banner').innerText().then(t=>t.includes('有条件免签')&&t.includes('NZeTA')))throw new Error('Australian permanent residence did not show the separate New Zealand waiver');
   if(await page.locator('.country.selected').getAttribute('fill')!=='#9481cd')throw new Error('Australian permanent residence waiver should use conditional color');
@@ -140,7 +145,7 @@ const {chromium}=require('C:/Users/92892/.cache/codex-runtimes/codex-primary-run
   await page.locator('#filters-toggle').click();
   await page.getByRole('button',{name:'第三国证件',exact:true}).click();
   await page.getByRole('button',{name:'列表',exact:true}).click();
-  const conditionalCount=await page.locator('#country-grid .destination-card').count();if(conditionalCount!==21)throw new Error('Unexpected third-country route count '+conditionalCount);
+  const conditionalCount=await page.locator('#country-grid .destination-card').count();if(conditionalCount!==56)throw new Error('Unexpected third-country route count '+conditionalCount);
   for(const name of ['阿根廷','加拿大','新西兰','北马其顿'])if(!await page.locator('#country-grid').innerText().then(t=>t.includes(name)))throw new Error('New document route missing from filter: '+name);
   await page.locator('#filters-toggle').click();
   await page.getByRole('button',{name:'全部',exact:true}).click();
@@ -148,11 +153,41 @@ const {chromium}=require('C:/Users/92892/.cache/codex-runtimes/codex-primary-run
   await page.locator('#country-grid .empty-message').waitFor();
   await page.getByRole('searchbox').fill('');
   await page.getByRole('button',{name:'地图',exact:true}).click();
-  for(const [code,name,label] of [['DZ','阿尔及利亚','需提前办理签证'],['RU','俄罗斯','普通护照免签'],['AU','澳大利亚','需提前办理签证'],['SA','沙特阿拉伯','可办理落地签'],['LK','斯里兰卡','需提前申请 ETA'],['MW','马拉维','需提前申请电子签']]){
+  for(const [code,name,label] of [['DZ','阿尔及利亚','需提前办理签证'],['RU','俄罗斯','普通护照免签'],['AU','澳大利亚','需提前办理签证'],['SA','沙特阿拉伯','可办理落地签'],['LK','斯里兰卡','免费落地签 · 需 ETA'],['KE','肯尼亚','免签 · 需 eTA'],['MW','马拉维','需提前申请电子签']]){
     await select(code,name);
     if(!await page.locator('#country-detail .status-banner').innerText().then(t=>t.includes(label)))throw new Error('Wrong expanded baseline for '+code);
     if(!await page.locator('#country-detail a').count())throw new Error('Official source missing for '+code);
   }
+  await page.locator('#profile-toggle').click();
+  await choice('visa','US').click();
+  for(const [code,name,condition] of [['AW','阿鲁巴','多次'],['BM','百慕大','45 天'],['KY','开曼群岛','直接抵达'],['ST','圣多美和普林西比','三个月']]){
+    await select(code,name);
+    if(await page.locator('.country.selected').getAttribute('fill')!=='#9481cd')throw new Error('New waiver did not recolor '+code);
+    if(!await page.locator('#country-detail').innerText().then(t=>t.includes(condition)&&t.includes('2026-10-11')))throw new Error('New waiver requirements or review date missing for '+code);
+  }
+  await select('MP','北马里亚纳群岛');
+  if(!await page.locator('#country-detail .status-banner').innerText().then(t=>t.includes('已有美国证件')))throw new Error('US visa did not override the CNMI authorization route');
+  await page.locator('#clear-credentials').click();
+  if(!await page.locator('#country-detail').innerText().then(t=>t.includes('G-CNMI ETA')&&t.includes('14')))throw new Error('CNMI baseline did not restore the 14-day authorization requirement');
+  await select('GU','关岛');
+  if(!await page.locator('#country-detail .status-banner').innerText().then(t=>t.includes('需提前办理签证')))throw new Error('CNMI waiver incorrectly covered Guam');
+  await choice('visa','SCHENGEN').click();
+  await select('GI','直布罗陀');
+  if(await page.locator('.country.selected').getAttribute('fill')!=='#4e879d')throw new Error('Gibraltar did not recognise the Schengen document');
+  await select('GL','格陵兰');
+  if(await page.locator('.country.selected').getAttribute('fill')!=='#d79379')throw new Error('Ordinary Schengen visa incorrectly covered Greenland');
+  await choice('permanent','SCHENGEN').click();
+  if(await page.locator('.country.selected').getAttribute('fill')!=='#9481cd')throw new Error('Qualifying Schengen residence did not discover the Greenland waiver');
+  await page.locator('#clear-credentials').click();
+  await choice('visa','US').click();
+  await select('AS','美属萨摩亚');
+  if(!await page.locator('#country-detail .status-banner').innerText().then(t=>t.includes('访问许可')))throw new Error('American Samoa permit requirement was lost');
+  await page.locator('#clear-credentials').click();
+  await select('AW','阿鲁巴');
+  if(await page.locator('.country.selected').getAttribute('fill')!=='#d79379')throw new Error('Clearing documents did not restore Aruba baseline');
+  await page.getByRole('button',{name:'还原地图'}).click();
+  await page.screenshot({path:path.join(__dirname,'../territory-coverage-preview.png'),fullPage:false});
+  await page.locator('#profile-close').click();
   await select('PH','菲律宾');
   if(!await page.locator('#country-detail').innerText().then(t=>t.includes('适用条件见详情')&&t.includes('马尼拉')&&t.includes('宿务')))throw new Error('Philippines port restriction is not shown');
   if(!await page.locator('.pending-overlay').count())throw new Error('Pending entry conditions lost their map overlay');
@@ -162,7 +197,7 @@ const {chromium}=require('C:/Users/92892/.cache/codex-runtimes/codex-primary-run
   await page.getByRole('button',{name:'还原地图'}).click();
   await page.getByRole('button',{name:'数据与来源'}).click();
   await page.locator('#sources-dialog[open]').waitFor();
-  if(!await page.locator('#sources-content').innerText().then(t=>t.includes('196')&&t.includes('海外属地')))throw new Error('Coverage and remaining territory scope are not documented');
+  if(!await page.locator('#sources-content').innerText().then(t=>t.includes('244')&&t.includes('海外属地')))throw new Error('Coverage and remaining territory scope are not documented');
   await page.keyboard.press('Escape');
   const webmcp=await page.evaluate(()=>Boolean(document.modelContext?.registerTool));
   for(const viewport of [{width:1280,height:800},{width:1024,height:768},{width:390,height:844}]){
